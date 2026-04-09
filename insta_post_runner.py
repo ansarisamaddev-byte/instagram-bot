@@ -14,9 +14,9 @@ IG_USER_ID = "17841480606710089"  #os.getenv("INSTAGRAM_ACCOUNT_ID")
 IMGBB_API_KEY = "6d9801bd3d0f13b8a22111870c54201e"
 
 cloudinary.config(
-    cloud_name="dusdbgfey",
-    api_key="545263495647551",
-    api_secret="KFRuIRsx-LkevEBul4YvfYBWfiY"
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
 )
 
 def upload_to_instagram(local_image_path, caption):
