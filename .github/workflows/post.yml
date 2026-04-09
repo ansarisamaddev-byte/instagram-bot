@@ -36,3 +36,10 @@ jobs:
         CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
       run: |
         python insta_post_runner.py
+    - name: Commit updated CSV
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "actions@github.com"
+        git add quotes.csv
+        git commit -m "Update posted quotes" || echo "No changes"
+        git push
