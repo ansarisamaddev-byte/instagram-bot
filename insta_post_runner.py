@@ -11,12 +11,11 @@ import cloudinary.uploader
 # --- CONFIGURATION ---
 ACCESS_TOKEN = "EAAdDD4cKxacBRPCWWL5mYCz0aFWrA3N41ZBBFnXSZBa9sslFdPfHxyyzVXemwUAckiv19zWJYUul9ZAGwLSWZATI9ae5UFRHfCGH43OmOdGySgLOWYV4zZBhaEfNkK6ZCWr9cBxLqvZCVcMSF3j2cKZBPQZCyZAVuX2CP3d1FcvHrKluuyUeRc7tt4PbXhhxl70ZARK2eLqAU73" #os.getenv("INSTAGRAM_ACCESS_TOKEN")
 IG_USER_ID = "17841480606710089"  #os.getenv("INSTAGRAM_ACCOUNT_ID")
-IMGBB_API_KEY = "6d9801bd3d0f13b8a22111870c54201e"
 
 cloudinary.config(
-    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
-    api_key=os.getenv("CLOUDINARY_API_KEY"),
-    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+    cloud_name="dusdbgfey",
+    api_key="545263495647551",
+    api_secret="KFRuIRsx-LkevEBul4YvfYBWfiY"
 )
 
 def upload_to_instagram(local_image_path, caption):
@@ -140,53 +139,19 @@ def run_automation():
 
     sn = row['SN']
 
-    caption1 = """Not everyone is meant to understand your journey.
-    Some are meant to watch you rise.
+    # Get caption from CSV
+    caption = str(row.get("Caption", "")).strip()
 
-    Stay disciplined. Stay dangerous. ⚔️
+    if not caption:
+        print("⚠️ No caption found in CSV, using fallback...")
+        caption = "Stay disciplined. ⚔️\n\nFollow for daily motivation 🔥"
 
-    Follow for daily warrior mindset 🔥
+    # Optional hashtags
+    hashtags = """
+    #motivation #mindset #discipline #selfgrowth #success #focus #grind #growthmindset #selfimprovement #dailyquotes
+    """
 
-    #motivation #mindset #discipline #selfgrowth #successmindset #warriormindset #mentalstrength #focus #grind #growthmindset #selfimprovement #dailyquotes #inspiration #hustle #stayhard #innerstrength #personaldevelopment #consistency #riseabove #noexcuses #mindsetshift #alpha #strength #quotesdaily #warrior"""
-
-    caption2 = """You don’t need motivation.
-    You need discipline when motivation disappears.
-
-    That’s where warriors are built. ⚔️
-
-    Follow for real mindset 🔥
-
-    #disciplineequalsfreedom #mindsetmatters #motivationdaily #selfdiscipline #successquotes #warriorlife #growth #focusmode #mentality #hustlehard #inspirationalquotes #stayfocused #dreambig #workhard #strongmind #riseandgrind #selfbelief #powerwithin #dailyinspiration #keepgoing #nevergiveup #successdriven #grindmode #warriorethos"""
-
-    caption3 = """Pain is temporary.
-    Weakness is forever.
-
-    Choose wisely. ⚔️
-
-    Follow to become unstoppable 🔥
-
-    #painandgain #mentaltoughness #warriorcode #strengthmindset #motivationquotes #discipline #noexcuses #stayhard #mindsetiseverything #selfgrowthjourney #inspire #focusonyourself #hardworkpaysoff #innerpower #determination #fearless #riseup #grinddaily #successmotivation #believeinyourself #pushyourlimits #warriorquotes #darkmotivation #stoic #alphamindset"""
-
-    caption4 = """Every day you delay…
-    someone else is becoming stronger than you.
-
-    Act now. ⚔️
-
-    Follow for daily discipline 🔥
-
-    #motivation #discipline #selfgrowth #mindset #success #warrior #focus #growth #hustle #grind #mindsetshift #selfimprovement #dailyquotes #inspiration #consistency #noexcuses #riseabove #mentalstrength #stayhard #dreambig #workhard #believe #progress #strength #warriormindset"""
-        
-    # Upload and Update
-    mod = sn % 4
-
-    if mod == 1:
-        caption = caption1
-    elif mod == 2:
-        caption = caption2
-    elif mod == 3:
-        caption = caption3
-    else:
-        caption = caption4
+    caption = caption + "\n\n" + hashtags
         
     if upload_to_instagram(output_file, caption):
         df.at[index, 'Posted'] = True
