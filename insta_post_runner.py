@@ -136,9 +136,55 @@ def run_automation():
         logo_path="profile.png",
         output_name=output_file
     )
-    
+
+    caption1 = """Not everyone is meant to understand your journey.
+    Some are meant to watch you rise.
+
+    Stay disciplined. Stay dangerous. ⚔️
+
+    Follow for daily warrior mindset 🔥
+
+    #motivation #mindset #discipline #selfgrowth #successmindset #warriormindset #mentalstrength #focus #grind #growthmindset #selfimprovement #dailyquotes #inspiration #hustle #stayhard #innerstrength #personaldevelopment #consistency #riseabove #noexcuses #mindsetshift #alpha #strength #quotesdaily #warrior"""
+
+    caption2 = """You don’t need motivation.
+    You need discipline when motivation disappears.
+
+    That’s where warriors are built. ⚔️
+
+    Follow for real mindset 🔥
+
+    #disciplineequalsfreedom #mindsetmatters #motivationdaily #selfdiscipline #successquotes #warriorlife #growth #focusmode #mentality #hustlehard #inspirationalquotes #stayfocused #dreambig #workhard #strongmind #riseandgrind #selfbelief #powerwithin #dailyinspiration #keepgoing #nevergiveup #successdriven #grindmode #warriorethos"""
+
+    caption3 = """Pain is temporary.
+    Weakness is forever.
+
+    Choose wisely. ⚔️
+
+    Follow to become unstoppable 🔥
+
+    #painandgain #mentaltoughness #warriorcode #strengthmindset #motivationquotes #discipline #noexcuses #stayhard #mindsetiseverything #selfgrowthjourney #inspire #focusonyourself #hardworkpaysoff #innerpower #determination #fearless #riseup #grinddaily #successmotivation #believeinyourself #pushyourlimits #warriorquotes #darkmotivation #stoic #alphamindset"""
+
+    caption4 = """Every day you delay…
+    someone else is becoming stronger than you.
+
+    Act now. ⚔️
+
+    Follow for daily discipline 🔥
+
+    #motivation #discipline #selfgrowth #mindset #success #warrior #focus #growth #hustle #grind #mindsetshift #selfimprovement #dailyquotes #inspiration #consistency #noexcuses #riseabove #mentalstrength #stayhard #dreambig #workhard #believe #progress #strength #warriormindset"""
+        
     # Upload and Update
-    caption = f"{row['Quote']} \n\n— {row['Author']}\n#motivation #mindset #growth"
+    mod = sn % 4
+
+    if mod == 1:
+        caption = caption1
+    elif mod == 2:
+        caption = caption2
+    elif mod == 3:
+        caption = caption3
+    else:
+        caption = caption4
+        
     if upload_to_instagram(output_file, caption):
         df.at[index, 'Posted'] = True
         df.to_csv('quotes.csv', index=False)
