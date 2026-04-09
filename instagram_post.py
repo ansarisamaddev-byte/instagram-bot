@@ -1,101 +1,128 @@
 import os
 import re
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 def create_proverb_post(image_path, quote_text, author_name, logo_path, output_name):
     POST_WIDTH, POST_HEIGHT = 1080, 1350
-    BASE_PADDING = 80 
+    PADDING = 80
 
-    # 1. Process and Crop the Background Image
-    try:
-        orig_bg = Image.open(image_path).convert("RGBA")
-    except FileNotFoundError:
-        print(f"Error: Background image not found at '{image_path}'")
-        return
+    # -------------------------------
+    # 1. LOAD & CROP
+    # -------------------------------
+    img = Image.open(image_path).convert("RGBA")
 
-    if orig_bg.width / orig_bg.height > POST_WIDTH / POST_HEIGHT:
-        new_height = POST_HEIGHT
-        new_width = int(POST_HEIGHT * orig_bg.width / orig_bg.height)
-        img_resized = orig_bg.resize((new_width, new_height), Image.Resampling.LANCZOS)
-        left = (new_width - POST_WIDTH) / 2
-        post_image = img_resized.crop((left, 0, left + POST_WIDTH, POST_HEIGHT))
+    ratio = POST_WIDTH / POST_HEIGHT
+    if img.width / img.height > ratio:
+        new_h = POST_HEIGHT
+        new_w = int(img.width * (POST_HEIGHT / img.height))
+        img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        img = img.crop(((new_w - POST_WIDTH)//2, 0, (new_w + POST_WIDTH)//2, POST_HEIGHT))
     else:
-        new_width = POST_WIDTH
-        new_height = int(POST_WIDTH * orig_bg.height / orig_bg.width)
-        img_resized = orig_bg.resize((new_width, new_height), Image.Resampling.LANCZOS)
-        top = (new_height - POST_HEIGHT) / 2
-        post_image = img_resized.crop((0, top, POST_WIDTH, top + POST_HEIGHT))
+        new_w = POST_WIDTH
+        new_h = int(img.height * (POST_WIDTH / img.width))
+        img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        img = img.crop((0, (new_h - POST_HEIGHT)//2, POST_WIDTH, (new_h + POST_HEIGHT)//2))
 
-    post_image = post_image.convert("RGB")
+    # Cinematic blur
+    img = img.filter(ImageFilter.GaussianBlur(3))
 
-    # 2. Add dark overlay for text readability
-    overlay = Image.new('RGBA', (POST_WIDTH, POST_HEIGHT), (0, 0, 0, 110)) 
-    post_image = Image.alpha_composite(post_image.convert('RGBA'), overlay).convert('RGB')
+    # -------------------------------
+    # 2. DARK GRADIENT
+    # -------------------------------
+    gradient = Image.new('L', (1, POST_HEIGHT))
+    for y in range(POST_HEIGHT):
+        gradient.putpixel((0, y), int(255 * (y / POST_HEIGHT)))
 
-    # 3. Setup Fonts (Cross-platform safe)
+    alpha = gradient.resize((POST_WIDTH, POST_HEIGHT))
+    black = Image.new('RGBA', (POST_WIDTH, POST_HEIGHT), (0, 0, 0, 220))
+    img = Image.composite(black, img, alpha).convert("RGB")
+
+    draw = ImageDraw.Draw(img)
+
+    # -------------------------------
+    # 3. FONTS
+    # -------------------------------
     font_path = "fonts/dejavu-sans-bold.ttf"
-    if not os.path.exists(font_path):
-        raise OSError(f"Font not found at {font_path}")
+    quote_font = ImageFont.truetype(font_path, 95)
+    author_font = ImageFont.truetype(font_path, 45)
 
-    quote_font = ImageFont.truetype(font_path, 80)
-    author_font = ImageFont.truetype(font_path, 60)
-    draw = ImageDraw.Draw(post_image)
-    
-    quote_color = (255, 255, 255) 
-    highlight_color = (255, 100, 80) 
+    # -------------------------------
+    # 4. HIGHLIGHT WORDS
+    # -------------------------------
+    power_words = ["sweat", "bleed", "war"]
 
-    # 4. Process the Quote Text
+    def highlight(text):
+        return " ".join([
+            f"*{w}*" if re.sub(r'\W', '', w).lower() in power_words else w
+            for w in text.split()
+        ])
+
+    quote_text = highlight(quote_text)
     words = re.findall(r'\*\w+\*|\S+', quote_text)
-    wrapped_lines = []
-    current_line = []
-    current_line_width = 0
-    max_text_width = POST_WIDTH - (BASE_PADDING * 2)
+
+    # -------------------------------
+    # 5. WRAP TEXT
+    # -------------------------------
+    max_width = POST_WIDTH - PADDING * 2
+    lines, current, width = [], [], 0
 
     for word in words:
-        clean_word = word.replace("*", "")
-        word_width = draw.textlength(clean_word, font=quote_font)
-        space_width = draw.textlength(" ", font=quote_font)
-        if current_line_width + word_width <= max_text_width:
-            current_line.append(word)
-            current_line_width += word_width + space_width
+        clean = word.replace("*", "")
+        w = draw.textlength(clean + " ", font=quote_font)
+
+        if width + w <= max_width:
+            current.append(word)
+            width += w
         else:
-            wrapped_lines.append(current_line)
-            current_line = [word]
-            current_line_width = word_width + space_width
-    wrapped_lines.append(current_line)
+            lines.append(current)
+            current = [word]
+            width = w
 
-    # 5. Centering Calculations
+    lines.append(current)
+
+    # -------------------------------
+    # 6. CENTERING
+    # -------------------------------
     ascent, descent = quote_font.getmetrics()
-    quote_line_height = ascent + descent + 15
-    quote_block_height = len(wrapped_lines) * quote_line_height
-    author_display_name = f"— {author_name}"
-    author_bbox = draw.textbbox((0, 0), author_display_name, font=author_font)
-    author_height = author_bbox[3] - author_bbox[1]
-    
-    MIDDLE_PADDING_Y = 60
-    total_content_height = quote_block_height + MIDDLE_PADDING_Y + author_height + 40
-    current_y = (POST_HEIGHT / 2) - (total_content_height / 2)
+    line_height = ascent + descent + 30
+    total_h = len(lines) * line_height + 200
+    y = (POST_HEIGHT - total_h) // 2
 
-    # 6. Draw Quote
-    for line in wrapped_lines:
-        line_draw_width = sum([draw.textlength(w.replace("*", "") + " ", font=quote_font) for w in line])
-        current_x = (POST_WIDTH - line_draw_width) / 2
+    # -------------------------------
+    # 7. TEXT
+    # -------------------------------
+    for line in lines:
+        line_w = sum(draw.textlength(w.replace("*","") + " ", font=quote_font) for w in line)
+        x = (POST_WIDTH - line_w) // 2
+
         for word in line:
-            clean_word = word.replace("*", "")
-            color = highlight_color if "*" in word else quote_color
-            draw.text((current_x, current_y), clean_word, font=quote_font, fill=color)
-            current_x += draw.textlength(clean_word + " ", font=quote_font)
-        current_y += quote_line_height
-        
-    current_y += (MIDDLE_PADDING_Y / 2)
+            clean = word.replace("*", "")
+            color = (255,120,60) if "*" in word else (255,255,255)
 
-    # 7. Draw Author
-    author_x = (POST_WIDTH - (author_bbox[2] - author_bbox[0])) / 2
-    draw.text((author_x, current_y), author_display_name, font=author_font, fill=(255, 255, 255))
-    current_y += author_height + 30
-    line_len = 200
-    draw.line([((POST_WIDTH-line_len)/2, current_y), ((POST_WIDTH+line_len)/2, current_y)], fill=(255, 255, 255), width=3)
+            # soft shadow
+            draw.text((x+3, y+3), clean, font=quote_font, fill=(0,0,0))
 
+            # main
+            draw.text((x, y), clean, font=quote_font, fill=color)
+
+            x += draw.textlength(clean + " ", font=quote_font)
+
+        y += line_height
+
+    # -------------------------------
+    # 8. AUTHOR
+    # -------------------------------
+    y += 40
+    author = f"— {author_name.upper()}"
+
+    bbox = draw.textbbox((0,0), author, font=author_font)
+    ax = (POST_WIDTH - (bbox[2]-bbox[0])) // 2
+
+    draw.text((ax, y), author, font=author_font, fill=(180,180,180))
+
+    # -------------------------------
+    # 9. LOGO
+    # -------------------------------
     # 8. ADD FLOATING CIRCULAR LOGO (TOP RIGHT)
     try:
         # Load your already circular logo
@@ -125,27 +152,28 @@ def create_proverb_post(image_path, quote_text, author_name, logo_path, output_n
         shadow = shadow.filter(ImageFilter.GaussianBlur(radius=blur_radius))
         
         # Coordinates for top-right
-        lx = POST_WIDTH - logo_w - BASE_PADDING
-        ly = BASE_PADDING
+        lx = POST_WIDTH - logo_w - PADDING
+        ly = PADDING
         
         # Paste Shadow first (with the blur offset correction), then Logo
-        post_image.paste(shadow, (lx + offset[0] - blur_radius, ly + offset[1] - blur_radius), shadow)
-        post_image.paste(logo, (lx, ly), logo)
+        img.paste(shadow, (lx + offset[0] - blur_radius, ly + offset[1] - blur_radius), shadow)
+        img.paste(logo, (lx, ly), logo)
         
     except FileNotFoundError:
         print("Logo not found, skipping...")
 
-    # 9. Final Save
-    post_image.convert("RGB").save(output_name, quality=95)
-    print(f"Success! Saved to {output_name}")
+    # -------------------------------
+    # SAVE
+    # -------------------------------
+    img.save(output_name, quality=95)
+    print("🔥 FINAL PREMIUM POST CREATED:", output_name)
 
+# RUN
 if __name__ == "__main__":
-    # Ensure background.jpg and logo.png exist locally.
     create_proverb_post(
-        image_path="images/image1.jpg",
-        # Use *asterisks* to define highlighted words (like best/now)
-        quote_text='"The *best* time to plant a tree was 20 years ago. The second *best* time is *now*."',
-        author_name="Chinese Proverb",
-        logo_path="profile.png", # Path to your transparent page logo
-        output_name="page_proverb.jpg"
+        image_path="images/image3.jpg",
+        quote_text="The more you sweat in training the less you bleed in war",
+        author_name="Unknown",
+        logo_path="profile.png",
+        output_name="premium_post.jpg"
     )
