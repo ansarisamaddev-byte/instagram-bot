@@ -33,10 +33,9 @@ def create_proverb_post(image_path, quote_text, author_name, logo_path, output_n
     post_image = Image.alpha_composite(post_image.convert('RGBA'), overlay).convert('RGB')
 
     # 3. Setup Fonts
-    font_paths = ["C:\\Windows\\Fonts\\impact.ttf", "impact.ttf", "arialbd.ttf"]
-    font_path = next((f for f in font_paths if os.path.exists(f)), None)
-    if not font_path:
-        raise OSError("Could not find a valid bold font.")
+    font_path = "fonts/dejavu-sans-bold.ttf"
+    if not os.path.exists(font_path):
+        raise OSError(f"Font not found at {font_path}")
 
     quote_font = ImageFont.truetype(font_path, 80)
     author_font = ImageFont.truetype(font_path, 60)
