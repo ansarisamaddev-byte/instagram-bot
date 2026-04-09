@@ -32,7 +32,7 @@ def create_proverb_post(image_path, quote_text, author_name, logo_path, output_n
     overlay = Image.new('RGBA', (POST_WIDTH, POST_HEIGHT), (0, 0, 0, 110)) 
     post_image = Image.alpha_composite(post_image.convert('RGBA'), overlay).convert('RGB')
 
-    # 3. Setup Fonts
+    # 3. Setup Fonts (Cross-platform safe)
     font_path = "fonts/dejavu-sans-bold.ttf"
     if not os.path.exists(font_path):
         raise OSError(f"Font not found at {font_path}")
