@@ -107,7 +107,7 @@ def upload_to_instagram(local_image_path, caption):
 
 def run_automation():
     # Load CSV
-    df = pd.read_csv('quotes.csv')
+    df = pd.read_csv('quotes.csv', on_bad_lines='warn')
     
     # Find first unposted quote
     try:
